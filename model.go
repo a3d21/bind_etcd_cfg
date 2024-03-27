@@ -58,6 +58,17 @@ func (h *PrefixHolder[T]) Range(li PrefixListener[T]) {
 	})
 }
 
+func (h *PrefixHolder[T]) ToMap() map[string]T {
+	m := map[string]T{}
+	h.data.Range(func(key, value any) bool {
+		k := key.(string)
+		v := value.(T)
+		m[k] = v
+		return true
+	})
+	return m
+}
+
 // Holder is a Dynamic Config Holder with `Refresh`
 type Holder struct {
 	typ reflect.Type
