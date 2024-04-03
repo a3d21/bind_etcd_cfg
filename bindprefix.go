@@ -6,8 +6,11 @@ import (
 	"strings"
 )
 
-// PrefixSupplier 提供key查val
-type PrefixSupplier[T any] func(key string) (T, bool)
+// PrefixSupplier 按前缀绑定
+type PrefixSupplier[T any] interface {
+	Get(key string) (T, bool)
+	ToMap() map[string]T
+}
 
 // PrefixListener 值更新时触发
 type PrefixListener[T any] func(eventType EventType, key string, val T)
@@ -68,7 +71,7 @@ func BindPrefix[T any](v3cli *clientv3.Client, prefix string, _ T, lis ...Prefix
 					} else {
 						var t T
 						if evt.Type == EventTypePut {
-							t, _ = h.GetByKey(k)
+							t, _ = h.Get(k)
 						}
 						for _, li := range lis {
 							li(evt.Type, k, t)
@@ -79,5 +82,5 @@ func BindPrefix[T any](v3cli *clientv3.Client, prefix string, _ T, lis ...Prefix
 		}
 	}()
 
-	return h.GetByKey, nil
+	return h, nil
 }

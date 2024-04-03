@@ -39,7 +39,7 @@ func (h *PrefixHolder[T]) Refresh(eventType EventType, key, raw string) error {
 	return nil
 }
 
-func (h *PrefixHolder[T]) GetByKey(key string) (T, bool) {
+func (h *PrefixHolder[T]) Get(key string) (T, bool) {
 	if v, ok := h.data.Load(key); ok {
 		if vv, ok2 := v.(T); ok2 {
 			return vv, true
