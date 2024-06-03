@@ -80,6 +80,10 @@ func Bind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[T]) 
 		raw = string(get.Kvs[0].Value)
 	}
 
+	if raw == "" {
+		return nil, fmt.Errorf("empty raw, key: %v", key)
+	}
+
 	err = h.Refresh(raw)
 	if err != nil {
 		return nil, err
@@ -99,7 +103,7 @@ func Bind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[T]) 
 					if data := string(evt.Kv.Value); data != "" {
 						err2 := h.Refresh(data)
 						if err2 != nil {
-							defaultLogger.Errorf("refresh fail, raw: %v err: %v", data, err2)
+							defaultLogger.Errorf("refresh fail, key: %v raw: %v err: %v", key, data, err2)
 							continue
 						}
 
