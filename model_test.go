@@ -13,10 +13,9 @@ type AStruct struct {
 	City string `json:"city" yaml:"city"`
 }
 
-func newHolder[T any](typ T) *Holder {
-	h := &Holder{
-		typ: reflect.TypeOf(typ),
-		v:   &atomic.Value{},
+func newTestHolder[T any](typ T) *Holder[T] {
+	h := &Holder[T]{
+		v: &atomic.Value{},
 	}
 	// init empty
 	var err error
@@ -39,10 +38,10 @@ func newHolder[T any](typ T) *Holder {
 
 // TestHolderTypes 测试BindCfg支持的typ类型，覆盖一般配置结构类型
 func TestHolderTypes(t *testing.T) {
-	assert.Equal(t, newHolder(AStruct{}).Get(), AStruct{Name: "foo", City: "SZ"})
-	assert.Equal(t, newHolder(&AStruct{}).Get(), &AStruct{Name: "foo", City: "SZ"})
-	assert.Equal(t, newHolder(map[string]string{}).Get(), map[string]string{"name": "foo", "city": "SZ"})
-	assert.Equal(t, newHolder([]int{}).Get(), []int{1, 2, 3})
-	assert.Equal(t, newHolder("").Get(), "foobar")
-	assert.Equal(t, newHolder(1).Get(), 1024)
+	assert.Equal(t, newTestHolder(AStruct{}).Get(), AStruct{Name: "foo", City: "SZ"})
+	assert.Equal(t, newTestHolder(&AStruct{}).Get(), &AStruct{Name: "foo", City: "SZ"})
+	assert.Equal(t, newTestHolder(map[string]string{}).Get(), map[string]string{"name": "foo", "city": "SZ"})
+	assert.Equal(t, newTestHolder([]int{}).Get(), []int{1, 2, 3})
+	assert.Equal(t, newTestHolder("").Get(), "foobar")
+	assert.Equal(t, newTestHolder(1).Get(), 1024)
 }

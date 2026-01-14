@@ -3,11 +3,11 @@ package bind_etcd_cfg
 import (
 	"encoding/json"
 	"errors"
-	"go.etcd.io/etcd/api/v3/mvccpb"
-	"gopkg.in/yaml.v3"
-	"reflect"
 	"strings"
 	"sync"
+
+	"go.etcd.io/etcd/api/v3/mvccpb"
+	"gopkg.in/yaml.v3"
 
 	"sync/atomic"
 )
@@ -69,40 +69,34 @@ func (h *PrefixHolder[T]) ToMap() map[string]T {
 	return m
 }
 
-// Holder is a Dynamic Config Holder with `Refresh`
-type Holder struct {
-	typ reflect.Type
-	v   *atomic.Value
+func newHolder[T any](typ T) *Holder[T] {
+	return &Holder[T]{
+		v: &atomic.Value{},
+	}
 }
 
-func (h *Holder) Refresh(raw string) error {
+// Holder is a Dynamic Config Holder with `Refresh`
+type Holder[T any] struct {
+	v *atomic.Value
+}
+
+func (h *Holder[T]) Refresh(raw string) error {
 	if raw == "" {
 		return errors.New("empty raw")
 	}
 
-	ttyp := h.typ
-	isPtr := ttyp.Kind() == reflect.Ptr
-	if isPtr {
-		ttyp = ttyp.Elem()
-	}
-
-	vv := reflect.New(ttyp)
-	v := vv.Interface()
-	err := unmarshal(raw, v)
+	var v T
+	err := unmarshal(raw, &v)
 	if err != nil {
 		return err
 	}
 
-	if isPtr {
-		h.v.Store(v)
-	} else {
-		h.v.Store(vv.Elem().Interface())
-	}
+	h.v.Store(v)
 	return nil
 }
 
-func (h *Holder) Get() interface{} {
-	return h.v.Load()
+func (h *Holder[T]) Get() T {
+	return h.v.Load().(T)
 }
 
 // unmarshal json or yaml

@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	clientv3 "go.etcd.io/etcd/client/v3"
-	"reflect"
-	"sync/atomic"
 )
 
 // Supplier 提供最新配置
@@ -29,10 +27,7 @@ func MustLoad[T any](v3cli *clientv3.Client, key string, typ T) T {
 func Load[T any](v3cli *clientv3.Client, key string, typ T) (T, error) {
 	var empty T
 
-	h := &Holder{
-		typ: reflect.TypeOf(typ),
-		v:   &atomic.Value{},
-	}
+	h := newHolder(typ)
 
 	ctx := context.Background()
 	get, err := v3cli.Get(ctx, key)
@@ -49,7 +44,7 @@ func Load[T any](v3cli *clientv3.Client, key string, typ T) (T, error) {
 		return empty, err
 	}
 
-	return h.Get().(T), nil
+	return h.Get(), nil
 }
 
 // MustBind panic when fail
@@ -64,10 +59,7 @@ func MustBind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[
 // Bind dynamic bind config with typ, return `Supplier[T]` getting the latest config
 // lis  optional, listen config change
 func Bind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[T]) (Supplier[T], error) {
-	h := &Holder{
-		typ: reflect.TypeOf(typ),
-		v:   &atomic.Value{},
-	}
+	h := newHolder(typ)
 
 	ctx := context.Background()
 	get, err := v3cli.Get(ctx, key)
@@ -91,7 +83,7 @@ func Bind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[T]) 
 
 	// lis
 	for _, li := range lis {
-		li(h.Get().(T))
+		li(h.Get())
 	}
 
 	// watch
@@ -108,7 +100,7 @@ func Bind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[T]) 
 						}
 
 						for _, li := range lis {
-							li(h.Get().(T))
+							li(h.Get())
 						}
 					}
 
@@ -121,5 +113,5 @@ func Bind[T any](v3cli *clientv3.Client, key string, typ T, lis ...Listener[T]) 
 		return nil, err
 	}
 
-	return func() T { return h.Get().(T) }, nil
+	return func() T { return h.Get() }, nil
 }
